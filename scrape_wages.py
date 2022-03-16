@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup as bs
 from splinter import Browser
 from config import username, password
 import datetime
+import time
 import pandas as pd
 import requests
 from webdriver_manager.chrome import ChromeDriverManager
@@ -91,6 +92,65 @@ if __name__=='__main__':
     glass_door_scraping_web=sys.argv[2]
     output_path=sys.argv[3]
 
-    
+    # open browser
+    chromdriver_path='/Users/yangsun/Downloads/chromedriver 5'
+    browser=init_browser(chromdriver_path)
+
+    # sign in
+    sign_in_GlassDoor(username, password)
+    time.sleep(2)
+
+    # visit the web
+    browser.visit(glass_door_scraping_web)
+    time.sleep(2)
+
+    # filter to the area
+    select_area(area_name)
+    time.sleep(1)
+
+    # total page number
+    html=browser.html
+    soup = bs(html, 'html.parser')
+    page=int(soup.find_all('div',class_='paginationFooter')[0].text.split(' ')[-2])
+    print(f'Total number of pages :{page}')
+
+    # only look for 
+    title_list = ['general manager',
+                'assistant manager',
+                'counter help',
+                'counter helper',
+                'shift leader',
+                'cook',
+                'shift lead',
+                'kitchen help',
+                'kitchen helper',
+                'lead counter',
+                'lead counter help',
+                'front of house',
+                'back of house',
+                'cashier',
+                'crew member',
+                'chef',
+                'pic',
+                'FOH team member',
+                'kitchen staff',
+                'FOH']
+    # scraping (get the first 20pages information)
+    final_res=[]
+    for p in range(20):
+        # all pay list for the current page
+        pay_lists=soup.find_all('div',class_='css-1u4lhyp')
+        get_current_page_info(pay_lists,final_res)
+        time.sleep(1)
+        # next page
+        next_page()
+        time.sleep(2)
+    # create a list for panda dataframe
+    t=[list(d.keys())+list(d.values())[0] for d in final_res]
+    final_data=pd.DataFrame(t,columns=['title','Average total pay','additional pay','creditbility'])
+    final_data.to_csv(output_path)
+
+
+
 
 
